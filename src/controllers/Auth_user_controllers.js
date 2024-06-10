@@ -29,7 +29,34 @@ const register = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
-  console.log(username, email, password);
+  if (!(username || email)) {
+    throw new ApiError(400, "username or email required");
+  }
+  const user = await User.findOne({ $or: [{ username }, { email }] });
+
+  if (!user) {
+    throw new ApiError(401, "user doesnot exist");
+  }
+
+  const PasswordValid = await user.isPasswordCorrect(password);
+  if (!PasswordValid) {
+    throw new ApiError(401, "user does not exist");
+  }
+
+  const accessToken = await user.generateAccessTokens();
+
+  const loggedInUser = await User.findById(user._id).select("-password");
+  const Optional = {
+    httpOnly: true,
+    secure: false,
+  };
+  return res.status(200).cookie("accessToken", accessToken, Optional).json({
+    accessToken,
+    loggedInUser,
+    message: "User logged in successfully",
+  });
 });
+
+// const GoogleLoginService = asyncHandler(await (re))
 
 export { register, login };

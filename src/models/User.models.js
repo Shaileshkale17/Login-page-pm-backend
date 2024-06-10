@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import JWT from "jsonwebtoken";
 
-const userSchema = mongoose.Schema(
+const userschema = mongoose.Schema(
   {
     username: {
       type: String,
@@ -25,25 +25,25 @@ const userSchema = mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", async function (next) {
+userschema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-userSchema.methods.isPasswordCorrect = async function (password) {
+userschema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-userSchema.methods.generateAccessTOkens = async function () {
+userschema.methods.generateAccessTokens = async function () {
   return JWT.sign(
     {
-      _id,
-      Username,
-      email,
+      _id: this._id,
+      username: this.username,
+      email: this.email,
     },
     process.env.ACCESS_TOKEN
   );
 };
 
-export const User = mongoose.model("User", userSchema);
+export const User = mongoose.model("User", userschema);
